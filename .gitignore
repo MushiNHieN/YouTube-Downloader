@@ -1,0 +1,7 @@
+env/
+buid/
+dist/
+installer/
+eula.txt
+setup.py
+yt_converter.spec
