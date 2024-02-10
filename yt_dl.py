@@ -5,9 +5,9 @@ import threading
 from time import sleep
 import logging as log
 
-# logging config
-log.basicConfig(filename='log.txt', level=log.INFO,
-                format='%(asctime)s - %(levelname)s - %(message)s')
+# logging config (problems with permissions)
+# log.basicConfig(filename='log.txt', level=log.INFO,
+#                 format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def replace_invalid_chars(filename):
@@ -15,20 +15,23 @@ def replace_invalid_chars(filename):
     return re.sub(invalid_chars_regex, ' ', filename)
 
 
+def is_youtube_link(link):
+    pattern = r'^(https?://)?(www\.)?(youtube\.com|youtu\.be)/(watch\?v=|embed/|v/|playlist\?list=)?([a-zA-Z0-9_-]{11})(\&.*list=([a-zA-Z0-9_-]+))?$'
+    match = re.match(pattern, link)
+    return match is not None
+
+
 def convert(path, link):
-    try:
-        if link and path:
+    if is_youtube_link(link):
+        if path:
             link_label.configure(text='')
             if 'list' in link:
                 dl_playlist(path, link)
             else:
                 dl_single(path, link)
-        else:
-            link_label.configure(
-                text='Please entry a valid YouTube link', text_color='red')
-    except NameError:
-        output_label.configure(
-            text='Please select an output path', text_color='red')
+    else:
+        link_label.configure(
+            text='Please entry a valid YouTube link', text_color='red')
 
 
 def dl_single(path, link):
@@ -45,7 +48,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f"'{stream.title}' {e}.", text_color='orange')
-            log.info(f'{stream.title} - {e}')
+            # log.info(f'{stream.title} - {e}')
 
     if mp4_checked.get() == 'on':
         video = YouTube(link)
@@ -60,7 +63,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f'"{stream.title}" {e}.', text_color='orange')
-            log.info(f'{stream.title} - {e}')
+            # log.info(f'{stream.title} - {e}')
 
 
 def dl_playlist(path, link):
@@ -80,7 +83,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
-                log.info(f'{stream.title} - {e}')
+                # log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
@@ -107,7 +110,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
-                log.info(f'{stream.title} - {e}')
+                # log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
@@ -124,7 +127,7 @@ def open_file_dialog():
 
 # tk window settings
 root = ctk.CTk()
-root.title('Youtube Converter')
+root.title('Youtube Downloader')
 root.geometry('700x450')
 root.iconbitmap('youtube.ico')
 
