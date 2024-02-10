@@ -6,8 +6,8 @@ from time import sleep
 import logging as log
 
 # logging config (problems with permissions)
-# log.basicConfig(filename='log.txt', level=log.INFO,
-#                 format='%(asctime)s - %(levelname)s - %(message)s')
+log.basicConfig(filename='log.txt', level=log.INFO,
+                format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def replace_invalid_chars(filename):
@@ -48,7 +48,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f"'{stream.title}' {e}.", text_color='orange')
-            # log.info(f'{stream.title} - {e}')
+            log.info(f'{stream.title} - {e}')
 
     if mp4_checked.get() == 'on':
         video = YouTube(link)
@@ -63,7 +63,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f'"{stream.title}" {e}.', text_color='orange')
-            # log.info(f'{stream.title} - {e}')
+            log.info(f'{stream.title} - {e}')
 
 
 def dl_playlist(path, link):
@@ -83,7 +83,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
-                # log.info(f'{stream.title} - {e}')
+                log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
@@ -110,7 +110,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
-                # log.info(f'{stream.title} - {e}')
+                log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
