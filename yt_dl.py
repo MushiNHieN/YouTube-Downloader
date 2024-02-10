@@ -1,9 +1,13 @@
 from pytube import YouTube, Playlist
-from pytube.exceptions import AgeRestrictedError
 import customtkinter as ctk
 import re
 import threading
 from time import sleep
+import logging as log
+
+# logging config
+log.basicConfig(filename='log.txt', level=log.INFO,
+                format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def replace_invalid_chars(filename):
@@ -12,10 +16,19 @@ def replace_invalid_chars(filename):
 
 
 def convert(path, link):
-    if 'list' in link:
-        dl_playlist(path, link)
-    else:
-        dl_single(path, link)
+    try:
+        if link and path:
+            link_label.configure(text='')
+            if 'list' in link:
+                dl_playlist(path, link)
+            else:
+                dl_single(path, link)
+        else:
+            link_label.configure(
+                text='Please entry a valid YouTube link', text_color='red')
+    except NameError:
+        output_label.configure(
+            text='Please select an output path', text_color='red')
 
 
 def dl_single(path, link):
@@ -32,6 +45,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f"'{stream.title}' {e}.", text_color='orange')
+            log.info(f'{stream.title} - {e}')
 
     if mp4_checked.get() == 'on':
         video = YouTube(link)
@@ -46,6 +60,7 @@ def dl_single(path, link):
         except Exception as e:
             complete_label.configure(
                 text=f'"{stream.title}" {e}.', text_color='orange')
+            log.info(f'{stream.title} - {e}')
 
 
 def dl_playlist(path, link):
@@ -65,6 +80,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
+                log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
@@ -78,6 +94,7 @@ def dl_playlist(path, link):
             complete_label.configure(
                 text=video.title, text_color='cyan')
             count_label.configure(text=f'( {i+1} / {len(playlist.videos)} )')
+            # Try to get 720p stream
             try:
                 stream = video.streams.filter(
                     progressive=True, res='720p').first()
@@ -90,6 +107,7 @@ def dl_playlist(path, link):
                 complete_label.configure(
                     text=f'{playlist.title} {e}.', text_color='orange')
                 sleep(2)
+                log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
@@ -107,7 +125,7 @@ def open_file_dialog():
 # tk window settings
 root = ctk.CTk()
 root.title('Youtube Converter')
-root.geometry('700x500')
+root.geometry('700x450')
 root.iconbitmap('youtube.ico')
 
 
@@ -117,8 +135,10 @@ mp4_checked = ctk.StringVar(value="off")
 
 youtube_link_entry = ctk.CTkEntry(
     root, width=600, placeholder_text='Youtube link or playlist to convert')
-youtube_link_entry.pack(pady=50)
+youtube_link_entry.pack(pady=(40, 0))
 
+link_label = ctk.CTkLabel(root, text='', text_color='red')
+link_label.pack()
 
 output_path_button = ctk.CTkButton(
     root, text='Output directory', command=open_file_dialog)
@@ -139,14 +159,6 @@ convert_single = ctk.CTkButton(
     root, text='Download', command=lambda: threading.Thread(target=convert, args=(file_path, youtube_link_entry.get())).start())
 convert_single.pack(pady=10)
 
-
-# convert_single = ctk.CTkButton(
-#     root, text='Convert single', command=lambda: threading.Thread(target=dl_single, args=(file_path, youtube_link_entry.get())).start())
-# convert_single.pack(pady=10)
-
-# convert_playlist = ctk.CTkButton(
-#     root, text='Convert playlist', command=lambda: threading.Thread(target=dl_playlist, args=(file_path, youtube_link_entry.get())).start())
-# convert_playlist.pack(pady=10)
 
 playlist_label = ctk.CTkLabel(root, text='', wraplength=400, text_color='cyan')
 playlist_label.pack()

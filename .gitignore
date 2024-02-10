@@ -4,4 +4,5 @@ dist/
 installer/
 eula.txt
 setup.py
-yt_converter.spec
+yt_dl.spec
+log.txt
