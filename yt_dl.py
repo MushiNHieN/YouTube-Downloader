@@ -4,6 +4,8 @@ import re
 import threading
 from time import sleep
 import logging as log
+import os
+
 
 # logging config (problems with permissions)
 log.basicConfig(filename='log.txt', level=log.INFO,
@@ -21,17 +23,38 @@ def is_youtube_link(link):
     return match is not None
 
 
+def sanitize_link(link):
+    sub = '&ab_channel'
+    index = link.find(sub)
+    if index != -1:
+        return link[:index]
+    else:
+        return link
+
+
+def open_folder(folder):
+    print(folder)
+    os.startfile(folder)
+
+
 def convert(path, link):
+    open_folder_button.pack_forget()
+    progress_bar_playlist.pack()
+    link = sanitize_link(link)
     if is_youtube_link(link):
         if path:
             link_label.configure(text='')
             if 'list' in link:
+                progress_bar_playlist.pack()
                 dl_playlist(path, link)
+
             else:
                 dl_single(path, link)
+            open_folder_button.pack()
     else:
         link_label.configure(
             text='Please entry a valid YouTube link', text_color='red')
+    progress_bar_playlist.pack_forget()
 
 
 def dl_single(path, link):
@@ -68,6 +91,9 @@ def dl_single(path, link):
 
 def dl_playlist(path, link):
     playlist = Playlist(link)
+    playlist_length = len(playlist)
+    progress_bar_playlist_speed = (1 / playlist_length) * 50
+    progress_bar_playlist.configure(determinate_speed=progress_bar_playlist_speed)
     if mp3_checked.get() == 'on':
         for i, video in enumerate(playlist.videos):
             playlist_label.configure(
@@ -85,6 +111,8 @@ def dl_playlist(path, link):
                 sleep(2)
                 log.info(f'{stream.title} - {e}')
                 continue
+            progress_bar_playlist.step()
+            print(progress_bar_playlist.get())
         complete_label.configure(
             text=f'{playlist.title} playlist download complete.', text_color='green')
         playlist_label.configure(text='')
@@ -127,7 +155,7 @@ def open_file_dialog():
 
 # tk window settings
 root = ctk.CTk()
-root.title('Youtube Downloader')
+root.title('HieNApps Youtube Downloader')
 root.geometry('700x450')
 root.iconbitmap('youtube.ico')
 
@@ -169,8 +197,14 @@ playlist_label.pack()
 complete_label = ctk.CTkLabel(root, text='', wraplength=400)
 complete_label.pack()
 
+progress_bar_playlist = ctk.CTkProgressBar(root, height=10)
+progress_bar_playlist.set(0)
+
 count_label = ctk.CTkLabel(root, text='', text_color='cyan')
 count_label.pack()
+
+open_folder_button = ctk.CTkButton(root, text='Open download', command=lambda: threading.Thread(
+    target=open_folder, args=(file_path,)).start())
 
 # center window on screen
 root.update_idletasks()  # Update geometry
