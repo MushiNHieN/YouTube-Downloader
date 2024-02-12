@@ -33,13 +33,22 @@ def sanitize_link(link):
 
 
 def open_folder(folder):
-    print(folder)
+
     os.startfile(folder)
+
+
+def show_progress(stream, chunk, bytes_remaining):
+    file_size = stream.filesize
+    bytes_downloaded = file_size - bytes_remaining
+    percentage = bytes_downloaded / file_size * 100
+    percentage = int(percentage)
+    progress_bar_dl.update()
+    progress_bar_dl.set(float(percentage / 100))
 
 
 def convert(path, link):
     open_folder_button.pack_forget()
-    progress_bar_playlist.pack()
+
     link = sanitize_link(link)
     if is_youtube_link(link):
         if path:
@@ -47,19 +56,24 @@ def convert(path, link):
             if 'list' in link:
                 progress_bar_playlist.pack()
                 dl_playlist(path, link)
+                progress_bar_playlist.pack_forget()
+                progress_bar_playlist.set(0)
 
             else:
+                progress_bar_dl.pack()
                 dl_single(path, link)
+                progress_bar_dl.pack_forget()
+                progress_bar_dl.set(0)
             open_folder_button.pack()
     else:
         link_label.configure(
             text='Please entry a valid YouTube link', text_color='red')
-    progress_bar_playlist.pack_forget()
 
 
 def dl_single(path, link):
+
     if mp3_checked.get() == 'on':
-        video = YouTube(link)
+        video = YouTube(link, on_progress_callback=show_progress)
         stream = video.streams.get_audio_only()
         complete_label.configure(
             text=f'Downloading: "{stream.title}"...', text_color='cyan')
@@ -67,22 +81,23 @@ def dl_single(path, link):
             stream.download(output_path=path,
                             filename=f'{replace_invalid_chars(stream.title)}.mp3', timeout=20)
             complete_label.configure(
-                text=f'"{stream.title}" download complete.', text_color='green')
+                text=f'"{stream.title}" download complete.', text_color='#07fc03')
         except Exception as e:
             complete_label.configure(
                 text=f"'{stream.title}' {e}.", text_color='orange')
             log.info(f'{stream.title} - {e}')
 
     if mp4_checked.get() == 'on':
-        video = YouTube(link)
-        stream = video.streams.filter(progressive=True, res='720p').first()
+        video = YouTube(link, on_progress_callback=show_progress)
+        stream = video.streams.filter(
+            progressive=True).get_highest_resolution()
         complete_label.configure(
             text=f'Downloading: "{stream.title}"...', text_color='cyan')
         try:
             stream.download(output_path=path,
                             filename=f'{replace_invalid_chars(stream.title)}.mp4', timeout=20)
             complete_label.configure(
-                text=f'"{stream.title}" download complete.', text_color='green')
+                text=f'"{stream.title}" download complete.', text_color='#07fc03')
         except Exception as e:
             complete_label.configure(
                 text=f'"{stream.title}" {e}.', text_color='orange')
@@ -91,11 +106,16 @@ def dl_single(path, link):
 
 def dl_playlist(path, link):
     playlist = Playlist(link)
+
+    # configure progress_bar_playlist
     playlist_length = len(playlist)
     progress_bar_playlist_speed = (1 / playlist_length) * 50
-    progress_bar_playlist.configure(determinate_speed=progress_bar_playlist_speed)
+    progress_bar_playlist.configure(
+        determinate_speed=progress_bar_playlist_speed)
+
     if mp3_checked.get() == 'on':
         for i, video in enumerate(playlist.videos):
+
             playlist_label.configure(
                 text=f'Downloading: {playlist.title} playlist')
             complete_label.configure(
@@ -112,14 +132,15 @@ def dl_playlist(path, link):
                 log.info(f'{stream.title} - {e}')
                 continue
             progress_bar_playlist.step()
-            print(progress_bar_playlist.get())
+
         complete_label.configure(
-            text=f'{playlist.title} playlist download complete.', text_color='green')
+            text=f'{playlist.title} playlist download complete.', text_color='#07fc03')
         playlist_label.configure(text='')
         count_label.configure(text='')
 
     if mp4_checked.get() == 'on':
         for i, video in enumerate(playlist.videos):
+
             playlist_label.configure(
                 text=f'Downloading: {playlist.title} playlist')
             complete_label.configure(
@@ -128,7 +149,7 @@ def dl_playlist(path, link):
             # Try to get 720p stream
             try:
                 stream = video.streams.filter(
-                    progressive=True, res='720p').first()
+                    progressive=True).get_highest_resolution()
             except:
                 stream = video.streams.filter(progressive=True).first()
             try:
@@ -141,7 +162,7 @@ def dl_playlist(path, link):
                 log.info(f'{stream.title} - {e}')
                 continue
         complete_label.configure(
-            text=f'{playlist.title} playlist download complete.', text_color='green')
+            text=f'{playlist.title} playlist download complete.', text_color='#07fc03')
         playlist_label.configure(text='')
         count_label.configure(text='')
 
@@ -186,9 +207,9 @@ mp4_checkbox = ctk.CTkCheckBox(
 mp4_checkbox.pack(pady=10)
 
 
-convert_single = ctk.CTkButton(
+download_button = ctk.CTkButton(
     root, text='Download', command=lambda: threading.Thread(target=convert, args=(file_path, youtube_link_entry.get())).start())
-convert_single.pack(pady=10)
+download_button.pack(pady=10)
 
 
 playlist_label = ctk.CTkLabel(root, text='', wraplength=400, text_color='cyan')
@@ -197,7 +218,10 @@ playlist_label.pack()
 complete_label = ctk.CTkLabel(root, text='', wraplength=400)
 complete_label.pack()
 
-progress_bar_playlist = ctk.CTkProgressBar(root, height=10)
+progress_bar_dl = ctk.CTkProgressBar(root, height=20)
+progress_bar_dl.set(0)
+
+progress_bar_playlist = ctk.CTkProgressBar(root, height=20)
 progress_bar_playlist.set(0)
 
 count_label = ctk.CTkLabel(root, text='', text_color='cyan')
